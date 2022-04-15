@@ -42,8 +42,10 @@ class _links:
     _links dataclass
 
     """
-    webui: str
-    self: str
+    webui: str = None
+    self: str = None
+    base: str = None
+    context: str = None
 
 
 @dataclass
@@ -55,15 +57,4 @@ class _expandable:
     metadata: str
     icon: str
     description: str
-    homepage: str
-
-
-@dataclass
-class _links:
-    """
-    _links dataclass
-
-    """
-    self: str
-    base: str
-    context: str
+    homepage: str = None
