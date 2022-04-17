@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Union
-import agnostic
+from data import agnostic
 
 from dataclass_wizard import JSONWizard
 
@@ -14,10 +14,7 @@ class ContentQuery(JSONWizard):
 
     def to_agnostic(self) -> List[agnostic.Page]:
         return [
-            agnostic.Page(
-                confluence_id=page.id,
-                name=page.title
-            ) for page in self.page.results
+            page.to_agnostic() for page in self.page.results
         ]
 
 
@@ -35,7 +32,7 @@ class ContentResult:
 
 
 @dataclass
-class Page:
+class Page(JSONWizard):
     """
     Result dataclass
 
@@ -44,9 +41,16 @@ class Page:
     type: str
     status: str
     title: str
-    extensions: 'Extensions'
     _links: '_links'
     _expandable: '_expandable'
+    extensions: 'Extensions' = None
+
+    def to_agnostic(self) -> agnostic.Page:
+        return agnostic.Page(
+            confluence_id=self.id,
+            name=self.title,
+            children=[]
+        )
 
 
 @dataclass
@@ -59,18 +63,6 @@ class Extensions:
 
 
 @dataclass
-class _links:
-    """
-    _links dataclass
-
-    """
-    webui: str
-    edit: str
-    tinyui: str
-    self: str
-
-
-@dataclass
 class _expandable:
     """
     _expandable dataclass
@@ -80,13 +72,13 @@ class _expandable:
     metadata: str
     operations: str
     children: str
-    restrictions: str
     history: str
     ancestors: str
     body: str
     version: str
     descendants: str
     space: str
+    restrictions: str = None
 
 
 @dataclass
@@ -95,7 +87,12 @@ class _links:
     _links dataclass
 
     """
-    self: str
+    self: str = None
+    base: str = None
+    context: str = None
+    webui: str = None
+    edit: str = None
+    tinyui: str = None
 
 
 @dataclass
@@ -109,22 +106,3 @@ class Blogpost:
     limit: int
     size: int
     _links: '_links'
-
-
-@dataclass
-class _links:
-    """
-    _links dataclass
-
-    """
-    self: str
-
-
-@dataclass
-class _links:
-    """
-    _links dataclass
-
-    """
-    base: str
-    context: str

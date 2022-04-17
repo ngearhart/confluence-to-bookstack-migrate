@@ -17,16 +17,12 @@ class SpaceQuery(JSONWizard):
 
     def to_agnostic(self) -> List[Category]:
         return [
-            Category(
-                slug=space.key,
-                name=space.name,
-                confluence_id=space.id
-            ) for space in self.results
+            space.to_agnostic() for space in self.results
         ]
 
 
 @dataclass
-class Space:
+class Space(JSONWizard):
     """Dataclass representing basic information about a confluence space."""
     id: int
     key: str
@@ -34,6 +30,14 @@ class Space:
     type: str
     _links: '_links'
     _expandable: '_expandable'
+
+    def to_agnostic(self) -> Category:
+        return Category(
+            slug=self.key,
+            name=self.name,
+            confluence_id=self.id,
+            pages=[]
+        )
 
 
 @dataclass

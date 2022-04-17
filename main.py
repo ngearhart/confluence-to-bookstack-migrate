@@ -8,7 +8,7 @@ def main():
     pat = prompt('Enter the personal access token: ', is_password=True)
 
     confluence_loader = ConfluenceLoader(url, pat)
-    print(confluence_loader.get_spaces())
+    confluence_loader.load()
 
 if __name__ == '__main__':
     main()
