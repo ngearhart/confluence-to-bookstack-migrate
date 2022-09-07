@@ -13,6 +13,7 @@ STYLES = {
     "instruction": '',  # default
     "answer": '#f44336 bold',
     "question": '',
+    "warn": '#ff0000 bold'
 }
 
 session = PromptSession(history=FileHistory('./.prompthistory'))

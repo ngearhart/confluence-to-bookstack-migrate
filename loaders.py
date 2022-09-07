@@ -2,7 +2,9 @@
 from dataclasses import dataclass
 from typing import List
 
-from requests import get
+from requests import get, Session
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 
 from data.agnostic import Category
 from data import agnostic
@@ -12,12 +14,12 @@ from data.confluence.space import Space, SpaceQuery
 
 def paginated(func):
     def wrapper(*args, **kwargs):
-        response, headers, base_url = func(*args, **kwargs)
+        response, headers, base_url, session = func(*args, **kwargs)
         if response.status_code == 200:
             data = response.json()
             yield from data['results']
             while 'next' in data['_links']:
-                response = get(base_url + data['_links']['next'], headers=headers)
+                response = session.get(base_url + data['_links']['next'], headers=headers)
                 if response.status_code == 200:
                     data = response.json()
                     yield from data['results']
@@ -32,6 +34,22 @@ class ConfluenceLoader:
 
     url: str
     access_token: str
+    verify: bool = True
+    session: Session = None
+
+    def get_session(self):
+        if self.session is None:
+            self.session = Session()
+            retry = Retry(
+                total=5,
+                backoff_factor=0.2,
+                method_whitelist=False,
+            )
+            adapter = HTTPAdapter(max_retries=retry)
+            self.session.mount('http://', adapter)
+            self.session.mount('https://', adapter)
+            self.session.verify = self.verify
+        return self.session
 
     @property
     def base_url(self):
@@ -44,24 +62,24 @@ class ConfluenceLoader:
 
     @paginated
     def perform_space_query(self) -> list:
-        return get(
+        return self.get_session().get(
             self.base_url + '/rest/api/space',
             headers=self.headers()
-        ), self.headers(), self.base_url
+        ), self.headers(), self.base_url, self.get_session()
 
     @paginated
     def perform_root_content_query(self, spaceKey) -> list:
-        return get(
+        return self.get_session().get(
             self.base_url + f'/rest/api/space/{spaceKey}/content/page?depth=root',
             headers=self.headers()
-        ), self.headers(), self.base_url
+        ), self.headers(), self.base_url, self.get_session()
 
     @paginated
     def get_page_children(self, parentId) -> list:
-        return get(
+        return self.get_session().get(
             self.base_url + f'/rest/api/content/search?cql=parent={parentId}',
             headers=self.headers()
-        ), self.headers(), self.base_url
+        ), self.headers(), self.base_url, self.get_session()
 
     def populate_page_children(self, page: agnostic.Page):
         for child in self.get_page_children(page.confluence_id):

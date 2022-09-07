@@ -1,3 +1,4 @@
 dataclass-wizard==0.22
 requests==2.27
 prompt_toolkit==3.0.29
+pygments==2.13.0
