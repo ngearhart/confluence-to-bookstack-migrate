@@ -32,3 +32,10 @@ class Category:
     def to_hierarchy(self) -> str:
         pages = '\n'.join(page.to_hierarchy(1) for page in self.pages)
         return f'{self.name}\n{pages}'
+
+    def flatten(self, tag_depth: int=2, max_depth: int=3):
+        """
+        @param tag_depth The depth above a child at which to start assigning tags.
+        @param max_depth The max depth to preserve.
+        """
+        ...
