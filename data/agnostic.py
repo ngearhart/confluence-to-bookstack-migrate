@@ -1,6 +1,7 @@
 
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, replace
+from typing import List, Union
+from functools import cached_property
 
 
 @dataclass
@@ -20,6 +21,33 @@ class Page:
             return f"{tab_prefix}- {self.name}\n{children_print}"
         return f"{tab_prefix}- {self.name}"
 
+    def add_child(self, child: 'Page'):
+        self.children.append(child)
+
+    @cached_property
+    def max_child_depth(self):
+        if self.children is None or len(self.children) == 0:
+            return 0  # I am a leaf
+        return max(child.max_child_depth for child in self.children) + 1
+
+    def flatten(self, parent: Union['Page', 'Category'], current_depth, tag_depth, max_depth):
+        # If this page has no children, immediately throw it on the parent
+        if self.children is None or len(self.children) == 0:
+            parent.add_child(replace(self))
+            return
+        # Also, if we have exceeded max depth
+        if current_depth >= max_depth:
+            parent.add_child(replace(self))
+            for child in self.children:
+                # Simply force all these children onto the same parent
+                child.flatten(parent, current_depth, tag_depth, max_depth)
+            return
+        # We have at least 1 child and 1 depth left
+        # Do we have more than max depth children?
+        if self.max_child_depth > max_depth - current_depth:
+            pass
+
+
 
 @dataclass
 class Category:
@@ -33,9 +61,16 @@ class Category:
         pages = '\n'.join(page.to_hierarchy(1) for page in self.pages)
         return f'{self.name}\n{pages}'
 
+    def add_child(self, child: 'Page'):
+        self.pages.append(child)
+
     def flatten(self, tag_depth: int=2, max_depth: int=3):
         """
         @param tag_depth The depth above a child at which to start assigning tags.
         @param max_depth The max depth to preserve.
         """
-        ...
+        outcome = replace(self)
+        outcome.pages = []
+        for page in self.pages:
+            page.flatten(outcome, 0, tag_depth, max_depth)
+        return outcome
