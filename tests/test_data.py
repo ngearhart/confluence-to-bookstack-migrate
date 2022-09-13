@@ -25,8 +25,19 @@ class FlatteningTests(TestCase):
             '',
             'parent',
             pages=[
-                Page('Page 1'),
-                Page('Page 2'),
-                Page('Page 3')
+                Page(
+                    'Page 1',
+                    children=[
+                        Page('Subpage 1')
+                    ]
+                ),
+                Page('Page 2')
             ]
         )
+        result = parent.flatten()
+        print(result.to_hierarchy())
+        self.assertEqual(result.pages[0].name, 'Page 1')
+        self.assertEqual(result.pages[0].pages[0].name, 'Introduction')
+        self.assertEqual(result.pages[0].pages[1].name, 'Subpage 1')
+        self.assertEqual(result.pages[1].name, 'Page 2')
+

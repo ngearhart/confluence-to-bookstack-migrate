@@ -4,6 +4,10 @@ from typing import List, Union
 from functools import cached_property
 
 
+def slugify(name: str):
+    return name.lower().strip().replace(' ', '-')
+
+
 @dataclass
 class Page:
     name: str
@@ -14,7 +18,7 @@ class Page:
 
     def to_hierarchy(self, level: int = 0) -> str:
         tab_prefix = ''.join('\t' * level)
-        if len(self.children) > 0:
+        if self.children is not None and len(self.children) > 0:
             children_print = '\n'.join([
                 child.to_hierarchy(level + 1) for child in self.children
             ])
@@ -44,9 +48,22 @@ class Page:
             return
         # We have at least 1 child and 1 depth left
         # Do we have more than max depth children?
-        if self.max_child_depth > max_depth - current_depth:
-            pass
+        # if self.max_child_depth > max_depth - current_depth:
 
+        # Write a new chapter and introduction
+        new_category = Category(slugify(self.name), self.name)
+        new_category.pages = [
+            Page('Introduction', confluence_id=self.confluence_id),
+        ]
+        for child in self.children:
+            child.flatten(new_category, current_depth + 1, tag_depth, max_depth)
+        parent.pages.append(new_category)
+
+        # else:  # No? Then just append to the category
+        #     parent.add_child(replace(self))
+        #     for child in self.children:
+        #         # Simply force all these children onto the same parent
+        #         child.flatten(parent, current_depth, tag_depth, max_depth)
 
 
 @dataclass
@@ -57,8 +74,8 @@ class Category:
     confluence_id: int = None
     bookstack_id: int = None
 
-    def to_hierarchy(self) -> str:
-        pages = '\n'.join(page.to_hierarchy(1) for page in self.pages)
+    def to_hierarchy(self, depth: int = 1) -> str:
+        pages = '\n'.join(page.to_hierarchy(depth) for page in self.pages)
         return f'{self.name}\n{pages}'
 
     def add_child(self, child: 'Page'):
